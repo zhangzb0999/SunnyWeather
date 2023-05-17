@@ -3,8 +3,12 @@ package com.example.sunnyweather.logic
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.liveData
 import com.example.sunnyweather.logic.model.Place
+import com.example.sunnyweather.logic.model.Weather
 import com.example.sunnyweather.logic.network.SunnyWeatherNetwork
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlin.coroutines.CoroutineContext
 
 
 /**
@@ -38,4 +42,54 @@ object Repository {
 
     //注意，将liveData()函数的线程参数类型指定成了Dispatchers.IO，这样代码块中的所有代码就都运行在子线程中了。
     //是不允许在主线程中进行网络请求的，诸如读写数据库之类的本地数据操作也是不建议在主线程中进行的，因此非常有必要在仓库层进行一次线程转换。
+
+
+    /**
+     * 获取实时天气信息和获取未来天气信息这两个请求是没有先后顺序的，
+     * 因此让它们并发执行可以提升程序的运行效率，但是要在同时得到它们的响应结果后才能进一步执行程序。
+     * 只需要分别在两个async函数中发起网络请求，然后再分别调用它们的await()方法，就可以保证只有在两个网络请求都成功响应之后，才会进一步执行程序。
+     * 另外，由于async函数必须在协程作用域内才能调用，所以这里又使用coroutineScope函数创建了一个协程作用域
+     */
+    fun refreshWeather(lng: String, lat: String) = fire(Dispatchers.IO) {
+        coroutineScope {
+            val deferredRealtime = async {
+                SunnyWeatherNetwork.getRealtimeWeather(lng, lat)
+            }
+            val deferredDaily = async {
+                SunnyWeatherNetwork.getDailyWeather(lng, lat)
+            }
+            val realtimeResponse = deferredRealtime.await()
+            val dailyResponse = deferredDaily.await()
+
+            if (realtimeResponse.status == "ok" && dailyResponse.status == "ok") {
+                val weather = Weather(realtimeResponse.result.realtime, dailyResponse.result.daily)
+                Result.success(weather)
+            } else {
+                Result.failure(
+                    RuntimeException(
+                        "realtime response status is ${realtimeResponse.status}" + "daily response status is ${dailyResponse.status}"
+                    )
+                )
+            }
+        }
+    }
+
+
+    /**
+     * 优化 try-catch
+     *
+     * 在liveData()函数的代码块中，是拥有挂起函数上下文的，可是当回调到Lambda 表达式中，代码就没有挂起函数上下文了，
+     * 但实际上Lambda 表达式中的代码一定也是在挂起函数中运行的。
+     * 为了解决这个问题，我们需要在函数类型前声明一个suspend关键字，以表示所有传入的Lambda 表达式中的代码也是拥有挂起函数上下文的
+     */
+    private fun <T> fire(context: CoroutineContext, block: suspend () -> Result<T>) =
+        liveData<Result<T>>(context) {
+            val result = try {
+                block()
+            } catch (e: Exception) {
+                Result.failure<T>(e)
+            }
+            emit(result)
+        }
+
 }

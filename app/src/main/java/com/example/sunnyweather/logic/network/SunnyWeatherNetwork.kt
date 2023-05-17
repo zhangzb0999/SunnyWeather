@@ -18,8 +18,7 @@ import kotlin.coroutines.suspendCoroutine
 object SunnyWeatherNetwork {
     //1.创建动态代理对象
     private val placeService = ServiceCreator.create<PlaceService>()
-
-    suspend fun searchPlaces(query: String) = placeService.searchPlace(query).await()
+    private val weatherService = ServiceCreator.create(WeatherService::class.java)
 
     /**
      * 2.简化retrofit2请求
@@ -29,7 +28,7 @@ object SunnyWeatherNetwork {
      * Lambda 表达式的参数列表上会传入一个Continuation参数，调用它的resume()方法或resumeWithException()可以让协程恢复执行
      * 不管之后有要发起多少次网络请求，都不需要重复进行回调实现了
      */
-    private suspend fun <T> Call<T>.await(): T {
+    suspend fun <T> Call<T>.await(): T {
         return suspendCoroutine { continuation ->
             enqueue(object : Callback<T> {
                 override fun onResponse(call: Call<T>, response: Response<T>) {
@@ -46,4 +45,15 @@ object SunnyWeatherNetwork {
             })
         }
     }
+
+    suspend fun searchPlaces(query: String) = placeService.searchPlace(query).await()
+
+    suspend fun getDailyWeather(lng: String, lat: String) =
+        weatherService.getDailyWeather(lng, lat).await()
+
+
+    suspend fun getRealtimeWeather(lng: String, lat: String) =
+        weatherService.getRealtimeWeather(lng, lat).await()
+
+
 }

@@ -6,7 +6,7 @@ import com.google.gson.annotations.SerializedName
  * 1.查询全球绝大多数城市的数据信息
  * https://api.caiyunapp.com/v2/place?query=北京&token={token}&lang=zh_CN
  *
- * {"status":"ok","query":"北京",
+ * {  "status":"ok","query":"北京",
  * "places":[
  * {"name":"北京市","location":{"lat":39.9041999,"lng":116.4073963},
  * "formatted_address":"中国北京市"},
@@ -17,37 +17,6 @@ import com.google.gson.annotations.SerializedName
  * {"name":"北京站(地铁站)","location":{"lat":39.904983,"lng":116.427287},
  * "formatted_address":"中国 北京市 东城区 2号线"}
  * ]}
- *
- *2.查看具体的天气信息
- * https://api.caiyunapp.com/v2.5/{token}/116.4073963,39.9041999/realtime.json
- *{
- * "status": "ok",
- * "result": {
- * "realtime": {
- * "temperature": 23.16,
- * "skycon": "WIND",
- * "air_quality": {
- * "aqi": { "chn": 17.0 }
- * }
- *
- *3.未来几天的天气信息
- * https://api.caiyunapp.com/v2.5/{token}/116.4073963,39.9041999/daily.json
- *
- *{
- * "status": "ok",
- * "result": {
- * "daily": {
- * "temperature": [ {"max": 25.7, "min": 20.3}, ... ],
- * "skycon": [ {"value": "CLOUDY", "date":"2019-10-20T00:00+08:00"}, ... ],
- * "life_index": {
- * "coldRisk": [ {"desc": "易发"}, ...],
- * "carWashing": [ {"desc": "适宜"}, ... ],
- * "ultraviolet": [ {"desc": "无"}, ... ],
- * "dressing": [ {"desc": "舒适"}, ... ]
- * }
- * }
- * }
- *
  */
 
 data class PlaceResponse(val status: String, val places: List<Place>)
