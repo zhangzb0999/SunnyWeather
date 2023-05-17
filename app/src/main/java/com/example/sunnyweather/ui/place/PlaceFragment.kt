@@ -1,5 +1,6 @@
 package com.example.sunnyweather.ui.place
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,6 +11,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.sunnyweather.MainActivity
+import com.example.sunnyweather.WeatherActivity
 import com.example.sunnyweather.databinding.FragmentPlaceBinding
 
 class PlaceFragment : Fragment() {
@@ -32,6 +35,18 @@ class PlaceFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
+        if (activity is MainActivity && viewModel.isPlaceSaved()) {
+            //只有当PlaceFragment 被嵌入MainActivity 中，并且之前已经存在选中的城市，此时才会直接跳转到WeatherActivity ，这样就可以解决无限循环跳转
+            val place = viewModel.getSavePlace()
+            val intent = Intent(context, WeatherActivity::class.java).apply {
+                putExtra("location_lng", place.location.lng)
+                putExtra("location_lat", place.location.lat)
+                putExtra("place_name", place.name)
+            }
+            startActivity(intent)
+            activity?.finish()
+            return
+        }
         adapter = PlaceAdapter(this, viewModel.placeList)
         val layoutManager = LinearLayoutManager(activity)
         binding.recyclerView.layoutManager = layoutManager
@@ -59,6 +74,8 @@ class PlaceFragment : Fragment() {
             } else {
                 Toast.makeText(activity, "未能查询到任何地点", Toast.LENGTH_SHORT).show()
                 result.exceptionOrNull()?.printStackTrace()
+                viewModel.placeList.clear()
+                adapter.notifyDataSetChanged()
             }
 
         })

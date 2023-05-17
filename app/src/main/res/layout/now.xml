@@ -8,7 +8,18 @@
     <FrameLayout
         android:id="@+id/titleLayout"
         android:layout_width="match_parent"
-        android:layout_height="70dp">
+        android:layout_height="70dp"
+        android:fitsSystemWindows="true">
+        <!--fitsSystemWindows 表示会为系统状态栏留出空间-->
+
+        <Button
+            android:id="@+id/navBtn"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="15dp"
+            android:background="@drawable/ic_home" />
+
 
         <TextView
             android:id="@+id/placeName"

@@ -1,12 +1,17 @@
 package com.example.sunnyweather
 
+import android.content.Context
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.sunnyweather.databinding.ActivityWeatherBinding
@@ -25,8 +30,38 @@ class WeatherActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        //将背景图和状态栏融合到一起
+        val decorView = window.decorView
+        //表示Activity 的布局会显示在状态栏上面
+        decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        //将状态栏设置成透明色
+        window.statusBarColor = Color.TRANSPARENT
+
         viewBinding = ActivityWeatherBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
+
+
+        viewBinding.nowLayout.navBtn.setOnClickListener {
+            //打开滑动菜单
+            viewBinding.drawerLayout.openDrawer(GravityCompat.START)
+        }
+        viewBinding.drawerLayout.addDrawerListener(object : DrawerLayout.DrawerListener {
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
+
+            override fun onDrawerOpened(drawerView: View) {}
+
+            override fun onDrawerClosed(drawerView: View) {
+                //当滑动菜单被隐藏的时候，同时也要隐藏输入法
+                val manager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                manager.hideSoftInputFromWindow(
+                    viewBinding.drawerLayout.windowToken, InputMethodManager.HIDE_NOT_ALWAYS
+                )
+            }
+
+            override fun onDrawerStateChanged(newState: Int) {}
+
+        })
 
         if (viewModel.locationLng.isEmpty()) {
             viewModel.locationLng = intent.getStringExtra("location_lng") ?: ""
@@ -47,9 +82,23 @@ class WeatherActivity : AppCompatActivity() {
                 Toast.makeText(this, "无法成功获取天气信息", Toast.LENGTH_SHORT).show()
                 result.exceptionOrNull()?.printStackTrace()
             }
+            //用于表示刷新事件结束，并隐藏刷新进度条
+            viewBinding.swipeRefresh.isRefreshing = false
+            Toast.makeText(this, "刷新完成", Toast.LENGTH_SHORT).show()
         })
+        //设置刷新进度条颜色
+        viewBinding.swipeRefresh.setColorSchemeColors(getColor(R.color.colorPrimary))
+        refreshWeather()
+        //下拉刷新监听器
+        viewBinding.swipeRefresh.setOnRefreshListener {
+            refreshWeather()
+        }
+    }
 
+    fun refreshWeather() {
         viewModel.refreshWeather(viewModel.locationLng, viewModel.locationLat)
+        //显示刷新进度条
+        viewBinding.swipeRefresh.isRefreshing = true
     }
 
     /**

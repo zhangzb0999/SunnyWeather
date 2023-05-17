@@ -2,6 +2,7 @@ package com.example.sunnyweather.logic
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.liveData
+import com.example.sunnyweather.logic.dao.PlaceDao
 import com.example.sunnyweather.logic.model.Place
 import com.example.sunnyweather.logic.model.Weather
 import com.example.sunnyweather.logic.network.SunnyWeatherNetwork
@@ -91,5 +92,15 @@ object Repository {
             }
             emit(result)
         }
+
+
+    /**
+     * 其实这里的实现方式并不标准，因为即使是对SharedPreferences 文件进行读写的操作，也是不太建议在主线程中进行，虽然它的执行速度通常会很快。
+     * 最佳的实现方式肯定还是开启一个线程来执行这些比较耗时的任务，然后通过LiveData对象进行数据返回，不过这里为了让代码看起来更加简单一些，就不使用那么标准的写法了
+     */
+    fun savePlace(place: Place) = PlaceDao.savePlace(place)
+    fun getSavePlace() = PlaceDao.getSavePlace()
+    fun isPlaceSaved() = PlaceDao.isPlaceSaved()
+
 
 }
